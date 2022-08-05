@@ -1,0 +1,63 @@
+const { expect } = require("chai");
+const { ethers } = require("hardhat");
+const hre = require("hardhat")
+// const helpers = require("hardhat-network-helpers")
+const { isCallTrace } = require("hardhat/internal/hardhat-network/stack-traces/message-trace");
+
+describe("NFTMarket", function () {
+  it("Should create and execute market sales", async function () {
+    const Market = await ethers.getContractFactory("NFTMarket");
+    const market = await Market.deploy();
+    await market.deployed()
+    const marketAddress = market.address
+
+    const NFT = await ethers.getContractFactory("NFT")
+    const nft = await NFT.deploy(marketAddress)
+    await nft.deployed()
+    const nftContractAddress = nft.address
+
+    let listingPrice = await market.getListingPrice()
+    listingPrice = listingPrice.toString()
+    let listingName = await market.getItemName()
+    console.log("name", listingName)
+    listingName = listingName.toString()
+    console.log("name", ethers.utils.parseBytes32String(listingName))
+
+    let listingWarranty = market.getWarranty()
+    // listingWarranty = listingWarranty.toString()
+
+    const auctionPrice = ethers.utils.parseUnits('100', 'ether')
+
+    await nft.createToken("https://www.mytokenlocation.com")
+    await nft.createToken("https://www.mytokenlocation2.com")
+
+    await market.createMarketItem(nftContractAddress, 1, auctionPrice,  listingWarranty, {value: listingPrice})
+    await market.createMarketItem(nftContractAddress, 2, auctionPrice,  listingWarranty, {value: listingPrice})
+
+    const [_, buyerAddress] = await ethers.getSigners()
+
+    await market.connect(buyerAddress).createMarketSale(nftContractAddress, 1, { value: auctionPrice})
+
+    let items = await market.fetchMarketItems()
+
+    items = await Promise.all(items.map(async i => {
+      const tokenUri = await nft.tokenURI(i.tokenId)
+      let item = {
+        price: i.price.toString(),
+        tokenId: i.tokenId.toString(),
+        seller: i.seller,
+        owner: i.owner,
+        warranty: (i.warrantyPeriod)/(60*60*24*365).toString(),
+        date: i.deliveryDate.toString(),
+        tokenUri
+      }
+
+      return item
+
+    }))
+
+    console.log('items are: ', items)
+
+
+  });
+});

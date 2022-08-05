@@ -1,0 +1,22 @@
+sell
+buy
+warranty
+fetch all
+fetch bought
+fetch create
+
+
+let item = {
+        price: i.price.toString(),
+        tokenId: i.tokenId.toString(),
+        seller: i.seller,
+        owner: i.owner,
+        name: i.itemName.toString(),
+        warranty: i.warrantyPeriod.toString(),
+        date: i.deliveryDate.toString(),
+        tokenUri
+      }
+
+
+npx hardhat node
+npx hardhat run scripts/deploy.js --network localhost
